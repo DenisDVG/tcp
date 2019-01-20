@@ -58,6 +58,10 @@
       <Project>{97e8a439-ce3c-40d1-9759-88369b7fd174}</Project>
       <Name>MicroTcp.BLL</Name>
     </ProjectReference>
+    <ProjectReference Include="..\MicroTcp.DAL\MicroTcp.DAL.csproj">
+      <Project>{A8EB998A-846F-4313-A228-9A2FD6B0B7F2}</Project>
+      <Name>MicroTcp.DAL</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

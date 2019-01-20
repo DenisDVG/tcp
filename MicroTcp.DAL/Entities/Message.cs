@@ -1,10 +1,11 @@
-﻿using System;
+﻿using MicroTcp.DAL.Entities.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MicroTcp.BLL
+namespace MicroTcp.DAL.Entities
 {
     public class Message
     {
@@ -13,6 +14,8 @@ namespace MicroTcp.BLL
         public int FromPort { get; set; }
         public int ToPort { get; set; }
         public string ClientId { get; set; }
+        public MessageType MessageType { get; set; }
+
 
     }
 }

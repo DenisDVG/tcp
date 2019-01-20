@@ -1,5 +1,7 @@
 ﻿using MicroTcp.BLL;
 using MicroTcp.BLL.Models;
+using MicroTcp.DAL.Entities;
+using MicroTcp.DAL.Entities.Enums;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
@@ -23,15 +25,12 @@ namespace MicroTcp
         //StreamWriter _sWriter;
         //StreamReader _sReader;
         public static int _startsPortNumber = 5555;
-        public static int _endPortNumber = 5555;
+        public static int _emptyPortNumber;
         static void Main()
         {
             _tcpServers = new List<TcpListener>();
             _clients = new List<Client>();
-            _endPortNumber = _startsPortNumber;
             StartNewTcpServerTread();
-            //StartNewTcpServer();
-
         }
         private static void StartNewTcpServerTread()
         {
@@ -41,11 +40,8 @@ namespace MicroTcp
 
         private static void StartNewTcpServer()
         {
-            var ipPoint = new IPEndPoint(IPAddress.Parse($"127.0.0.1"), _endPortNumber);
-            ++_endPortNumber;
-            //Thread th = new Thread(StartNewTcpServer);
-            //th.Start(ipPoint);
-
+            SetEmptyPortNumber();
+            var ipPoint = new IPEndPoint(IPAddress.Parse($"127.0.0.1"), _emptyPortNumber);
             var server = new TcpListener(ipPoint);
             server.Start();
             _tcpServers.Add(server);
@@ -72,11 +68,13 @@ namespace MicroTcp
             Boolean bClientConnected = true;
             String messageJson = null;
             IPEndPoint endPoint = (IPEndPoint)tcpClient.Client.LocalEndPoint;
-            if (endPoint.Port != _startsPortNumber)
+            var idsClients = _clients.Select(x => x.Port);
+            if (_clients.Count == 0 || !idsClients.Contains(endPoint.Port))
             {
+                SetEmptyPortNumber();
                 var client = new Client
                 {
-                    Port = _endPortNumber - 1,
+                    Port = _emptyPortNumber,
                     TcpClient = tcpClient
                 };
                 _clients.Add(client);
@@ -97,16 +95,11 @@ namespace MicroTcp
                     continue;
                 }
                 Console.WriteLine("From Client; " + messageJson);
-
-                if ("conected" == message.Text)
+                if (message.MessageType == MessageType.Authenticate)
                 {
-                    
-                }
-                if ("start" == message.Text)
-                {
-
                     StartNewTcpServerTread();
-                    SentToClient($"conect to:{_endPortNumber}", sWriter);
+                    SetEmptyPortNumber();
+                    SentToClient(sWriter, 0, _emptyPortNumber.ToString(), MessageType.Authenticate);
                 }
                 if (message.ToPort != 0)
                 {
@@ -116,69 +109,38 @@ namespace MicroTcp
                         continue;
                     }
                     var sWriterRecipient = new StreamWriter(messageRecipient.TcpClient.GetStream(), Encoding.ASCII);
-                    SentToClient(message.Text, sWriterRecipient);
+                    SentToClient(sWriterRecipient, 0, string.Empty, MessageType.ToAnotherClient);
                 }
             }
         }
 
-        private static void SentToClient(string message, StreamWriter sWriter)
+        private static void SentToClient(StreamWriter sWriter, int toPort, string text, MessageType messageType)
         {
-            sWriter.WriteLine(message);
+            var message = new Message
+            {
+                Text = text,
+                FromPort = 0,
+                ToPort = toPort,
+                MessageType = messageType
+            };
+
+            string messageJson = JsonConvert.SerializeObject(message);
+
+
+            sWriter.WriteLine(messageJson);
             sWriter.Flush();
         }
+
+        private static void SetEmptyPortNumber()
+        {
+            if (_clients.Count > 0)
+            {
+                _emptyPortNumber = _clients.Select(x => x.Port).Max() + 1;
+            }
+            else
+            {
+                _emptyPortNumber = _startsPortNumber;
+            }
+        }
     }
-
-    //public class TcpServer
-    //{
-    //    private TcpListener _server;
-    //    private Boolean _isRunning;
-    //    StreamWriter _sWriter;
-    //    StreamReader _sReader;
-    //    public TcpServer(IPEndPoint localEP)
-    //    {
-    //        _server = new TcpListener(localEP);
-    //        _server.Start();
-    //        _isRunning = true;
-    //        LoopClients();
-    //    }
-
-    //    public void LoopClients()
-    //    {
-    //        while (_isRunning)
-    //        {
-    //            TcpClient client = _server.AcceptTcpClient();
-    //            Thread t = new Thread(new ParameterizedThreadStart(HandleClient));
-    //            t.Start(client);
-    //        }
-    //    }
-
-    //    public void HandleClient(object obj)
-    //    {
-    //        TcpClient client = (TcpClient)obj;
-    //        _sWriter = new StreamWriter(client.GetStream(), Encoding.ASCII);
-    //        _sReader = new StreamReader(client.GetStream(), Encoding.ASCII);
-    //        Boolean bClientConnected = true;
-    //        String sData = null;
-
-    //        while (bClientConnected)
-    //        {
-    //            sData = _sReader.ReadLine();
-    //            Console.WriteLine("From Client; " + sData);
-    //            if("it is conected" == sData)
-    //            {
-
-    //            }
-    //            if ("it is start" == sData)
-    //            {
-    //                SentToClient("Start N port");
-    //            }
-    //        }
-    //    }
-
-    //    private void SentToClient(string message)
-    //    {
-    //        _sWriter.WriteLine(message);
-    //        _sWriter.Flush();
-    //    }
-    //}
 }
