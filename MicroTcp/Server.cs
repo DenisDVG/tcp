@@ -51,7 +51,6 @@ namespace MicroTcp
             _tcpServers.Add(server);
             LoopClients(server);
 
-            //var endPoint = server.LocalEndpoint;
         }
 
         public static void LoopClients(TcpListener server)
